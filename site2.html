@@ -1,0 +1,423 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+    <title>Nat's Alarm Clock V2</title> 
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.1/jquery.mobile-1.4.1.min.css" />
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.4.1/jquery.mobile-1.4.1.min.js"></script>
+    
+    <style>
+        .button-wrap {
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+    </style>
+    
+    <script type="text/javascript">
+        jQuery.support.cors = true;
+        //var serverUrl = "http://192.168.1.114:8000";
+        var serverUrl = "http://#REPLACE_WITH_IP_ADDRESS#:8000";
+
+        var alarmAm = true;
+        
+        function showPopup(message) {
+            $("#popupText").text(message);
+            //setPopupMessage(message);
+            $("#loadingPopup").popup( "open", {positionTo : "window", transition: "pop"});
+        }
+        
+        function setPopupMessage(message) {
+            $("#popupText").text(message);
+            
+            // below doesn't actually re-center.
+            // It must store the state of the text when it gets shown or something
+            //$("#popupText").popup( "reposition", {positionTo : "window"});
+            
+            }
+        
+        function hidePopup() {
+            $("#loadingPopup").popup("close");
+        }
+        
+        function pausePlayClick() {
+            //$.ajax({url: "/api/getWeather", data: { zipcode: 97201}});
+            //$.ajax("http://192.168.1.116:8000/control?action=pause_play");
+            $.ajax({
+                type: "GET",
+                //url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: "pause_play" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text",
+                success: function(x) { 
+                    showPopup(x);
+                    //alert(x);
+                },
+                error: function(x) { 
+                    showPopup(x.responseText);
+                    //alert(x.responseText); 
+                }
+            });
+        }
+        
+        function setVolume(level)
+        {
+            showPopup("Setting volume: " + level.toString());
+        
+            $.ajax({
+                type: "GET",
+                // url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: "volume "+level.toString()+"%" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text",
+                success: function(x) { 
+                    //alert(x);
+                    showPopup(x);
+                },
+                error: function(x) { 
+                    //alert(x.responseText);
+                    setPopupMessage(x.responseText);
+                }
+            });
+        }
+        
+        function getStations()
+        {
+            showPopup("Getting stations...");
+        
+            $.ajax({
+                type: "GET",
+                //url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: "stations" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text json",
+                success: function(x) {
+                    var stationsList = $("#stationsList");
+                    stationsList.empty();
+                    // loop through our values and add them to the list
+                    for (value in x) {
+                        stationsList.append("<li><a href=\"#\">"+value+":  "+x[value]+"</a></li>");        
+                    }
+                    stationsList.listview( "refresh" );
+                    hidePopup();
+                },
+                error: function(x,error) { 
+                    setPopupText(x.responseText);
+                    //alert(x.responseText);
+                }
+            });
+        }
+        
+        function getStationHistory()
+        {
+            showPopup("Getting station history...");
+            
+            $.ajax({
+                type: "GET",
+                //url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: "station_history" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text json",
+                success: function(x) {
+                    
+                    var stationsList = $("#stationHistoryList");
+                    stationsList.empty();
+                    // loop through our values and add them to the list
+                    for (value in x) {
+                        stationsList.append("<li>"+value+") "+x[value][0]+":  "+x[value][1]+"</li>");        
+                    }
+                    stationsList.listview( "refresh" );
+                    
+                    hidePopup();
+                },
+                error: function(x,error) { 
+                    //alert(x.responseText);
+                    setPopupMessage(x.responseText);
+                }
+            });
+        }
+        
+        function runCommand()
+        {
+            //showPopup("Running command: " + $("#commandBox-0").val());
+        
+            $.ajax({
+                type: "GET",
+                //url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: $("#commandBox-0").val() },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text",
+                success: function(x) { 
+                    showPopup(x);
+                    //alert(x);
+                },
+                error: function(x) { 
+                    //alert(x.responseText); 
+                    showPopup(x.responseText);
+                }
+            });
+        }
+        
+        function getSongInfo(startup)
+        {
+            if (!startup)
+            {
+                showPopup("Getting song info...");
+            }
+        
+            $.ajax({
+                type: "GET",
+                //url: "http://192.168.1.116:8000/control",
+                url: serverUrl + "/control",
+                data: { action: "song_info" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text json",
+                success: function(x) { 
+                    hidePopup();
+                    $("#artistName").text("Artist: " + x["artist"]);
+                    $("#songName").text("Title: " + x["title"]);
+                    $("#albumCover").attr("src", x["coverArt"]);
+                    //alert(x);
+                },
+                error: function(x) { 
+                    //alert(x.responseText); 
+                    showPopup(x.responseText);
+                }
+            });
+        }
+        
+        function getAlarmInfo()
+        {
+            //showPopup("Getting alarm info...");
+        
+            $.ajax({
+                type: "GET",
+                url: serverUrl + "/control",
+                data: { action: "get_alarms" },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text json",
+                success: function(x) {
+                    $("#alarmHour").val(x[0]["hours"]);
+                    $("#alarmMin").val(x[0]["minutes"]);
+                    $("#alarmAmPm").text(x[0]["ampm"]);
+                    
+                    if (x[0]["ampm"] == "am") {
+                        alarmAm = true;
+                    }
+                    else
+                    {
+                        alarmAm = false;
+                    }
+                    $("#alarmStation").val(x[0]["station"]);
+                    
+                    if (x[0]["enabled"] == "True") {
+                        $("#alarmEnabled").prop("checked", true).checkboxradio( "refresh" );
+                    }
+                    else {
+                        $("#alarmEnabled").prop("checked", false).checkboxradio( "refresh" );
+                    }
+                    hidePopup();
+                },
+                error: function(x) { 
+                    //alert(x.responseText); 
+                    showPopup(x.responseText);
+                }
+            });
+        }
+        
+        function toggleAmPm()
+        {
+            if (alarmAm) {
+                $("#alarmAmPm").text("pm");
+                alarmAm = false;
+            }
+            else {
+                $("#alarmAmPm").text("am");
+                alarmAm = true;
+            }
+        }
+        
+        function applyAlarm()
+        {
+            showPopup("Applying alarm...");
+                    
+            $.ajax({
+                type: "GET",
+                url: serverUrl + "/control",
+                data: { action: "wakeup " + $("#alarmHour").val() + " " + $("#alarmMin").val() + " " + $("#alarmAmPm").text() + " " + $("#alarmStation").val() + " " + $("#alarmEnabled").prop("checked") },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text",
+                success: function(x) { 
+                    showPopup("Succeeded: " + x);
+                    //alert(x);
+                },
+                error: function(x) { 
+                    //alert(x.responseText); 
+                    showPopup("Failed: " + x.responseText);
+                }
+            });
+        }
+        
+        function snoozeClick() {
+            $.ajax({
+                type: "GET",
+                url: serverUrl + "/control",
+                data: { action: "snooze " +$("#snoozeMin").val() + " " + $("#alarmStation").val() },
+                cache: false,
+                crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                dataType: "text",
+                success: function(x) { 
+                    showPopup(x);
+                    //alert(x);
+                },
+                error: function(x) { 
+                    showPopup(x.responseText);
+                    //alert(x.responseText); 
+                }
+            });
+        }
+        
+        $(document).on( "pageshow", function( event, ui ) {
+            $width = $("#songInfoDiv").width();
+            $("#songInfoDiv img").css({"max-width" : $width , "height" : "auto"}); 
+            getSongInfo(true);
+            getAlarmInfo();
+        });
+    </script>
+</head> 
+
+<body>
+<div id="alarmPage" data-role="page">
+
+    <div data-role="header">
+        <h1>Alarm V2</h1>
+    </div><!-- /header -->
+    
+    <div role="main" class="ui-content">
+    
+        <div class="ui-body ui-body-a ui-corner-all">
+            <a href="#" onClick="pausePlayClick()" class="ui-btn ui-corner-all">Pause/Play</a>
+            
+            <form id="volumeSlider">
+                <label for="slider-0">Volume:</label>
+                <input type="range" name="slider" id="slider-0" value="80" min="50" max="100"
+                    data-highlight="true" data-popup-enabled="true"/>
+            </form>
+        </div>
+        
+        <p></p><p></p>
+        <div id="songInfoDiv" class="ui-body ui-body-a ui-corner-all">
+            <p id="artistName">Artist: Bon Iver</p>
+            <p id="songName">Song: The Wolves (Act I And II)</p>
+            <img id="albumCover" src="http://cont-sv5-3.pandora.com/images/public/amz/7/2/5/1/656605211527_495W_500H.jpg"/>
+            <a href="#" onClick="getSongInfo(false)" class="ui-btn ui-corner-all">Refresh</a>
+        </div>
+        
+        <p/><p/>
+        
+        <div class="ui-corner-all ui-body ui-body-a">
+            <h3>Alarm</h3>
+            <div class="ui-grid-a">
+                <div class="ui-block-a"><form class="button-wrap"><input name="snooze-min" id="snoozeMin" type="number" pattern="[0-59]*" value="6" data-clear-btn="false"/></form></div>
+                <div class="ui-block-b"><a href="#" onClick="snoozeClick()" class="ui-btn ui-corner-all">Snooze</a></div>
+            </div>
+            <h4>Set Alarm:</h4>
+            <div class="ui-grid-b">
+                <div class="ui-block-a"><form class="button-wrap"><input name="time-hour" id="alarmHour" type="number" pattern="[1-12]*" value="" data-clear-btn="false"/></form></div>
+                <div class="ui-block-b"><form class="button-wrap"><input name="time-min" id="alarmMin" type="number" pattern="[0-59]*" value="" data-clear-btn="false"/></form></div>
+                <div class="ui-block-c"><a href="#" id="alarmAmPm" onClick="toggleAmPm()" class="ui-btn ui-corner-all ui-mini">am</a></div>
+            </div>
+            <form>station:<input name="alarm-station" id="alarmStation" type="number" value="" data-clear-btn="false"/></form>
+            <form><label><input name="alarm-enabled" id="alarmEnabled" type="checkbox" data-mini="true"/>enabled</label></form>
+            <a href="#" id="alarmApply" onClick="applyAlarm()" class="ui-btn ui-corner-all ui-mini">apply</a>
+        </div>
+        
+        <script type="text/javascript">
+            $("#volumeSlider").on( "slidestop", 
+                function( event, ui ) {
+                    //alert($('#slider-0').attr('value'));
+                    setVolume($("#slider-0").val());
+                });
+            
+            $("#volumeSlider").on( "slidecreate",
+                function( event, ui ) {
+                    $.ajax({
+                        type: "GET",
+                        //url: "http://192.168.1.116:8000/control",
+                        url: serverUrl + "/control",
+                        data: { action: "get_volume"},
+                        cache: false,
+                        crossDomain: true, // this line doesn't actually do anything? need the jQuery.support.cors
+                        dataType: "text",
+                        success: function(x) { $("#slider-0").val(x).slider("refresh"); },
+                        error: function(x) { alert(x.responseText); }
+                    });
+                    
+                });
+        </script>
+        
+        <div id="stationsHistory" data-role="collapsible">
+            <h3>Station history</h3>
+            <ul data-role="listview" id="stationHistoryList">
+                <li>Items should go here</li>
+            </ul>
+        </div>
+        
+        <div id="stationsCollapsible" data-role="collapsible">
+            <h3>List of stations</h3>
+            <ul data-role="listview" id="stationsList">
+                <li>Items should go here</li>
+            </ul>
+        </div>
+        
+        <script type="text/javascript">
+            $("#stationsCollapsible").on("collapsibleexpand",
+                function( event, ui ) {
+                    //$( "#loadingPopup" ).popup( "open", {positionTo : "window", transition: "pop"});
+                    getStations();
+                });
+                
+            $("#stationsHistory").on("collapsibleexpand",
+                function (event,ui) {
+                    getStationHistory();
+                });
+        </script>
+        
+        
+        <div class="ui-content" id="loadingPopup" data-role="popup" data-overlay-theme="a">
+            <p id="popupText">I am a popup</p>
+        </div>
+        
+        <p></p>
+        <div class="ui-body ui-body-b ui-corner-all">
+        <form id="commandBox">
+            <label for="commandBox-0">Enter command:</label>
+            <input type="text" name="name" id="commandBox-0" value=""  />
+        </form>
+        <a href="#" onClick="runCommand()" class="ui-btn ui-corner-all">Run command</a>
+        </div>
+        
+    </div> <!-- role="main" class="ui-content"-->
+    
+    <div data-role="footer">
+        <!-- <h4>End</h4> -->
+    </div><!-- /footer -->
+
+</div><!-- /page -->
+
+
+</body>
+</html>

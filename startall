@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/home/pi/alarm/alarmServer.py 12 0 </dev/null >/home/pi/alarm/alarmServerOutput.txt 2>&1 &
+/home/pi/alarm/webServer.py </dev/null >/home/pi/alarm/webServerOutput.txt 2>&1 &

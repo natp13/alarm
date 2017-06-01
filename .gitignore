@@ -1,3 +1,9 @@
+output.txt
+alarmServerOutput.txt
+pianobarOutput.txt
+vlcOutput.txt
+webServerOutput.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,0 +1,1 @@
+0 6 * * * /home/pi/alarm/startAlarm.py 13
